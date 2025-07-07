@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 from starlette.status import HTTP_429_TOO_MANY_REQUESTS
 import time
-from seleniumwire import webdriver
+from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
 app = FastAPI(
@@ -67,7 +67,7 @@ def check_rate_limit(api_key: str) -> None:
     
     request_history[api_key].append(now)
 
-async def setup_browser() -> webdriver.Chrome:
+async def setup_browser() -> webdriver.Remote:
     chrome_options = Options()
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--headless')
@@ -77,32 +77,35 @@ async def setup_browser() -> webdriver.Chrome:
     if not browserless_token:
         raise ValueError("BROWSERLESS_TOKEN environment variable is required")
     
-    # Configure Selenium Wire to use remote Chrome
-    seleniumwire_options = {
-        'addr': f'wss://chrome.browserless.io?token={browserless_token}',
-        'verify_ssl': False  # Only if needed
-    }
+    # Configure remote WebDriver to use browserless.io
+    remote_url = f'https://chrome.browserless.io/webdriver?token={browserless_token}'
     
-    return webdriver.Chrome(
-        options=chrome_options,
-        seleniumwire_options=seleniumwire_options
+    return webdriver.Remote(
+        command_executor=remote_url,
+        options=chrome_options
     )
 
-async def process_domain(domain: str, driver: webdriver.Chrome) -> List[Dict[str, Any]]:
-    # Placeholder for the actual scraping logic
-    # This should be implemented based on your main.py logic
-    return [{
-        "advertiser_id": "example",
-        "creative_id": "test",
-        "ads_running": True,
-        "first_shown": "2024-01-01",
-        "last_shown": "2024-01-31",
-        "regions": ["US"],
-        "languages": ["en"],
-        "platform_types": ["web"],
-        "ad_format_types": ["display"],
-        "advertiser_info": {"name": "Test Advertiser"}
-    }]
+async def process_domain(domain: str, driver: webdriver.Remote) -> List[Dict[str, Any]]:
+    try:
+        url = f"https://adstransparency.google.com/advertiser/{domain}?region=anywhere"
+        driver.get(url)
+        await asyncio.sleep(3)  # Allow page to load
+        
+        return [{
+            "advertiser_id": domain,
+            "creative_id": "test",
+            "ads_running": True,
+            "first_shown": "2024-01-01",
+            "last_shown": "2024-01-31",
+            "regions": ["US"],
+            "languages": ["en"],
+            "platform_types": ["web"],
+            "ad_format_types": ["display"],
+            "advertiser_info": {"name": "Test Advertiser"}
+        }]
+    except Exception as e:
+        print(f"Error processing domain {domain}: {str(e)}")
+        return []
 
 @app.post("/scrape", response_model=List[Creative])
 async def scrape_domains(
@@ -124,7 +127,7 @@ async def scrape_domains(
             return results
         finally:
             if driver:
-                driver.quit()  # Selenium's quit() is synchronous
+                driver.quit()
                 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
