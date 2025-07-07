@@ -89,8 +89,8 @@ async def setup_browser() -> webdriver.Remote:
         raise ValueError("BROWSERLESS_TOKEN environment variable is required")
     
     print("Connecting to browserless.io...")
-    # Configure remote WebDriver to use browserless.io
-    remote_url = f'https://production-sfo.browserless.io/webdriver?token={browserless_token}&timeout=30000'
+    # Configure remote WebDriver to use browserless.io CDP endpoint
+    remote_url = f'wss://production-sfo.browserless.io?token={browserless_token}'
     
     try:
         driver = webdriver.Remote(
