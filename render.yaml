@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: google-ads-transparency-api
+    env: docker
+    region: oregon  # Choose the region closest to your users
+    plan: free  # Using the free tier
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: BROWSERLESS_TOKEN
+        value: 2SdKy0nwAfLgCnP50c2e898cc0152059e715929e7ba333f65
+    buildCommand: docker build -t google-ads-transparency-api .
+    startCommand: docker run -p 8000:8000 google-ads-transparency-api 

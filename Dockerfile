@@ -1,28 +1,23 @@
-# Use Apify's base image with Python and Chrome
-FROM apify/actor-python-selenium
+FROM python:3.9-slim
 
-# Install tesseract-ocr and Chrome
+# Install minimal dependencies
 RUN apt-get update && apt-get install -y \
-    tesseract-ocr \
     wget \
     gnupg \
-    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
 
-# Create app directory
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# Copy requirements first for better caching
-COPY requirements.txt ./
+# Copy and install requirements
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code
-COPY . ./
+COPY . .
 
-# Run the scraper
-CMD ["python", "main.py"]
+# Set environment variables
+ENV PORT=8000
+ENV PYTHONUNBUFFERED=1
 
-LABEL com.apify.actBuildId=ICAlZ9TcdpNfodg5J 
+# Run FastAPI
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"] 

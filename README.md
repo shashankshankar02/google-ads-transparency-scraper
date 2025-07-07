@@ -1,119 +1,89 @@
-# Google Ads Transparency Scraper
+# Google Ads Transparency Scraper API
 
-This [Apify](https://apify.com) actor scrapes Google's Ad Transparency Center to check if domains are running ads and extracts ad creatives with OCR text extraction.
+A FastAPI-based REST API for scraping Google Ads Transparency data. This API allows you to fetch advertising data for any domain, including information about active ads, advertisers, and creative details.
 
 ## Features
 
-- Checks if domains are running Google Ads
-- Extracts ad creatives (images and videos)
-- Performs OCR on image ads to extract text
-- Handles YouTube video thumbnails and links
-- Provides detailed statistics and progress tracking
-- Configurable concurrency for faster processing
-- Robust error handling and retries
+- Scrape Google Ads Transparency data for multiple domains
+- Get detailed information about ad creatives
+- Async processing for better performance
+- Rate limiting and error handling
+- Comprehensive API documentation
 
-## Input
+## API Endpoints
 
-The actor accepts the following input parameters:
+### POST /scrape
+Scrape ads data for given domains
 
-```jsonc
+Request body:
+```json
 {
-    "domains": [
-        "example.com",
-        "example.org"
-    ],
-    "maxConcurrency": 1 // Optional, default: 1, max: 10
+    "domains": ["example.com"],
+    "max_concurrency": 1
 }
 ```
 
-- `domains`: Array of domains to check for ads (required)
-- `maxConcurrency`: Maximum number of domains to process concurrently (optional)
-
-## Output
-
-The actor saves results to its default dataset. Each item contains:
-
-```jsonc
-{
-    "domain": "example.com",
-    "ads_running": true,
-    "creatives": [
-        {
-            "type": "image",
-            "url": "https://..."
-        },
-        {
-            "type": "video",
-            "url": "https://..."
-        }
-    ],
-    "ad_texts": [
-        "Extracted text from image 1",
-        "Extracted text from image 2"
-    ],
-    "error": null, // Error message if scraping failed
-    "timestamp": "2024-03-21T12:34:56.789Z"
-}
+Response:
+```json
+[
+    {
+        "advertiser_id": "string",
+        "creative_id": "string",
+        "ads_running": boolean,
+        "first_shown": "string",
+        "last_shown": "string",
+        "regions": ["string"],
+        "languages": ["string"],
+        "platform_types": ["string"],
+        "ad_format_types": ["string"],
+        "advertiser_info": {}
+    }
+]
 ```
 
-## Usage
+### GET /
+Get API information and documentation
 
-1. Create a new task for the actor
-2. Provide input:
-   ```json
-   {
-       "domains": ["example.com"],
-       "maxConcurrency": 1
-   }
-   ```
-3. Run the task
-4. Get results from the dataset
+## Setup
 
-## Performance and Limits
+1. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-- Memory: 4096 MB
-- Timeout: 4 hours
-- Concurrency: 1-10 domains in parallel
-- Rate limiting: 2 second delay between requests
+2. Set environment variables:
+```bash
+export APIFY_TOKEN=your_token_here
+export APIFY_DEFAULT_DATASET_ID=your_dataset_id
+```
 
-## Dependencies
+3. Run the API:
+```bash
+uvicorn api:app --host 0.0.0.0 --port 8000
+```
 
-- Python 3.9
-- Chrome browser
-- Tesseract OCR
-- Key Python packages:
-  - selenium
-  - pytesseract
-  - aiohttp
-  - Pillow
-  - apify-client
+## Usage with RapidAPI
+
+This API is available on RapidAPI marketplace. To use it:
+
+1. Sign up for a RapidAPI account
+2. Subscribe to the API
+3. Use your API key in the X-RapidAPI-Key header
 
 ## Error Handling
 
-The actor implements robust error handling:
+The API includes comprehensive error handling:
+- 400: Bad Request - Invalid input
+- 404: Not Found - Domain not found
+- 429: Too Many Requests - Rate limit exceeded
+- 500: Internal Server Error - Processing error
 
-- Automatic retries for transient errors
-- Graceful degradation for OCR failures
-- Detailed error reporting in output
-- Progress tracking and statistics
+## Rate Limits
 
-## Development
+- Free tier: 100 requests/day
+- Pro tier: 1000 requests/day
+- Enterprise: Custom limits
 
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Support
 
-2. Install system dependencies:
-   ```bash
-   apt-get install tesseract-ocr
-   ```
-
-3. Run locally:
-   ```bash
-   python main.py
-   ```
-
-## License
-
-Apache 2.0 
+For support, please contact [your contact information] 
