@@ -73,15 +73,7 @@ async def setup_browser() -> webdriver.Remote:
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('--disable-gpu')
-    
-    # Set capabilities through options
-    chrome_options.set_capability('browserName', 'chrome')
-    chrome_options.set_capability('browserVersion', 'latest')
-    chrome_options.set_capability('timeouts', {
-        'implicit': 10000,
-        'pageLoad': 20000,
-        'script': 10000
-    })
+    chrome_options.add_argument('--disable-dev-shm-usage')
     
     # Get browserless token from environment variable
     browserless_token = os.getenv('BROWSERLESS_TOKEN')
@@ -89,8 +81,8 @@ async def setup_browser() -> webdriver.Remote:
         raise ValueError("BROWSERLESS_TOKEN environment variable is required")
     
     print("Connecting to browserless.io...")
-    # Configure remote WebDriver to use browserless.io CDP endpoint
-    remote_url = f'wss://production-sfo.browserless.io?token={browserless_token}'
+    # Configure remote WebDriver to use browserless.io
+    remote_url = f'https://chrome.browserless.io/webdriver?token={browserless_token}'
     
     try:
         driver = webdriver.Remote(
