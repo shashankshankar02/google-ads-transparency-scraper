@@ -78,7 +78,7 @@ async def setup_browser() -> webdriver.Remote:
         raise ValueError("BROWSERLESS_TOKEN environment variable is required")
     
     # Configure remote WebDriver to use browserless.io
-    remote_url = f'https://chrome.browserless.io/webdriver?token={browserless_token}'
+    remote_url = f'https://production-sfo.browserless.io/webdriver?token={browserless_token}'
     
     return webdriver.Remote(
         command_executor=remote_url,
