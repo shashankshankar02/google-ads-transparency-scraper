@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 from starlette.status import HTTP_429_TOO_MANY_REQUESTS
 import time
-from selenium import webdriver
+from seleniumwire import webdriver
 from selenium.webdriver.chrome.options import Options
 
 app = FastAPI(
@@ -67,18 +67,28 @@ def check_rate_limit(api_key: str) -> None:
     
     request_history[api_key].append(now)
 
-async def setup_browser() -> webdriver.Remote:
+async def setup_browser() -> webdriver.Chrome:
     chrome_options = Options()
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--headless")
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--headless')
     
-    # Use remote Chrome instance
-    return webdriver.Remote(
-        command_executor=os.getenv("SELENIUM_REMOTE_URL", "https://chrome.browserless.io"),
-        options=chrome_options
+    # Get browserless token from environment variable
+    browserless_token = os.getenv('BROWSERLESS_TOKEN')
+    if not browserless_token:
+        raise ValueError("BROWSERLESS_TOKEN environment variable is required")
+    
+    # Configure Selenium Wire to use remote Chrome
+    seleniumwire_options = {
+        'addr': f'https://chrome.browserless.io?token={browserless_token}',
+        'verify_ssl': False  # Only if needed
+    }
+    
+    return webdriver.Chrome(
+        options=chrome_options,
+        seleniumwire_options=seleniumwire_options
     )
 
-async def process_domain(domain: str, driver: webdriver.Remote) -> List[Dict[str, Any]]:
+async def process_domain(domain: str, driver: webdriver.Chrome) -> List[Dict[str, Any]]:
     # Placeholder for the actual scraping logic
     # This should be implemented based on your main.py logic
     return [{
@@ -114,7 +124,7 @@ async def scrape_domains(
             return results
         finally:
             if driver:
-                driver.quit()
+                driver.quit()  # Selenium's quit() is synchronous
                 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -136,4 +146,4 @@ async def health_check():
     return {"status": "healthy", "timestamp": time.time()}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
