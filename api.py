@@ -8,8 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 from starlette.status import HTTP_429_TOO_MANY_REQUESTS
 import time
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from pyppeteer import connect
+import aiohttp
 
 app = FastAPI(
     title="Google Ads Transparency Scraper",
@@ -67,48 +67,40 @@ def check_rate_limit(api_key: str) -> None:
     
     request_history[api_key].append(now)
 
-async def setup_browser() -> webdriver.Remote:
+async def setup_browser():
     print("Setting up browser...")
-    chrome_options = Options()
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--headless')
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    
     # Get browserless token from environment variable
     browserless_token = os.getenv('BROWSERLESS_TOKEN')
     if not browserless_token:
         raise ValueError("BROWSERLESS_TOKEN environment variable is required")
     
     print("Connecting to browserless.io...")
-    # Configure remote WebDriver to use browserless.io
-    remote_url = f'https://production-sfo.browserless.io/webdriver?token={browserless_token}'
-    
-    try:
-        driver = webdriver.Remote(
-            command_executor=remote_url,
-            options=chrome_options
-        )
-        print("Browser setup complete!")
-        return driver
-    except Exception as e:
-        print(f"Error setting up browser: {str(e)}")
-        raise
+    browser = await connect(
+        browserWSEndpoint=f'wss://production-sfo.browserless.io?token={browserless_token}',
+        args=['--no-sandbox', '--disable-setuid-sandbox']
+    )
+    print("Browser setup complete!")
+    return browser
 
-async def process_domain(domain: str, driver: webdriver.Remote) -> List[Dict[str, Any]]:
+async def process_domain(domain: str, browser) -> List[Dict[str, Any]]:
     try:
         print(f"Processing domain: {domain}")
         url = f"https://adstransparency.google.com/advertiser/{domain}?region=anywhere"
         print(f"Navigating to URL: {url}")
         
-        driver.set_page_load_timeout(30)  # 30 seconds timeout for page load
-        driver.implicitly_wait(10)  # 10 seconds implicit wait
+        page = await browser.newPage()
+        await page.setViewport({'width': 1280, 'height': 800})
         
-        driver.get(url)
-        print("Page loaded, waiting for 3 seconds...")
-        await asyncio.sleep(3)  # Allow page to load
+        print("Loading page...")
+        await page.goto(url, {'waitUntil': 'networkidle0', 'timeout': 30000})
+        print("Page loaded")
+        
+        # Wait for a moment to ensure content is loaded
+        await asyncio.sleep(3)
         
         print("Returning test data for now")
+        await page.close()
+        
         return [{
             "advertiser_id": domain,
             "creative_id": "test",
@@ -135,17 +127,17 @@ async def scrape_domains(
         check_rate_limit(api_key)
         
         results = []
-        driver = await setup_browser()
+        browser = await setup_browser()
         
         try:
             for domain in request.domains:
-                domain_results = await process_domain(domain, driver)
+                domain_results = await process_domain(domain, browser)
                 if isinstance(domain_results, list):
                     results.extend(domain_results)
             return results
         finally:
-            if driver:
-                driver.quit()
+            if browser:
+                await browser.close()
                 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
