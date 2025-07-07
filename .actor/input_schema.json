@@ -1,0 +1,26 @@
+{
+    "title": "Google Ads Transparency Scraper Input",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "domains": {
+            "title": "Domains to scrape",
+            "type": "array",
+            "description": "List of domains to check for Google Ads transparency data",
+            "editor": "stringList",
+            "prefill": [
+                "example.com"
+            ],
+            "uniqueItems": true
+        },
+        "maxConcurrency": {
+            "title": "Maximum concurrency",
+            "type": "integer",
+            "description": "Maximum number of domains to process concurrently",
+            "default": 1,
+            "minimum": 1,
+            "maximum": 10
+        }
+    },
+    "required": ["domains"]
+} 

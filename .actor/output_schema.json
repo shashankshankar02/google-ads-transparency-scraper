@@ -1,0 +1,57 @@
+{
+    "title": "Google Ads Transparency Data",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "domain": {
+            "title": "Domain",
+            "type": "string",
+            "description": "The domain that was checked"
+        },
+        "ads_running": {
+            "title": "Ads Running",
+            "type": "boolean",
+            "description": "Whether the domain is currently running Google Ads"
+        },
+        "creatives": {
+            "title": "Ad Creatives",
+            "type": "array",
+            "description": "List of ad creatives found",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "title": "Creative Type",
+                        "type": "string",
+                        "description": "Type of creative (image or video)",
+                        "enum": ["image", "video"]
+                    },
+                    "url": {
+                        "title": "Creative URL",
+                        "type": "string",
+                        "description": "URL of the creative asset"
+                    }
+                }
+            }
+        },
+        "ad_texts": {
+            "title": "Ad Texts",
+            "type": "array",
+            "description": "Text extracted from image ads using OCR",
+            "items": {
+                "type": "string"
+            }
+        },
+        "error": {
+            "title": "Error",
+            "type": "string",
+            "description": "Error message if the scraping failed"
+        },
+        "timestamp": {
+            "title": "Timestamp",
+            "type": "string",
+            "description": "ISO timestamp when the data was collected"
+        }
+    },
+    "required": ["domain", "ads_running"]
+} 

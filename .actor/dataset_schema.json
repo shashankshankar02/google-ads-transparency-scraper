@@ -1,0 +1,92 @@
+{
+    "actorSpecification": 1,
+    "fields": {
+        "type": "object",
+        "properties": {
+            "domain": {
+                "type": "string",
+                "description": "The domain that was checked for ads"
+            },
+            "ads_running": {
+                "type": "boolean",
+                "description": "Whether the domain is currently running ads"
+            },
+            "creatives": {
+                "type": "array",
+                "description": "List of ad creatives found",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": ["image", "video"]
+                        },
+                        "url": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "ad_texts": {
+                "type": "array",
+                "description": "Extracted text from image ads",
+                "items": {
+                    "type": "string"
+                }
+            },
+            "error": {
+                "type": ["string", "null"],
+                "description": "Error message if scraping failed"
+            },
+            "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "description": "When the domain was checked"
+            }
+        }
+    },
+    "views": {
+        "overview": {
+            "title": "Overview",
+            "transformation": {
+                "fields": [
+                    "domain",
+                    "ads_running",
+                    "creatives",
+                    "ad_texts",
+                    "error",
+                    "timestamp"
+                ]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "domain": {
+                        "label": "Domain",
+                        "format": "text"
+                    },
+                    "ads_running": {
+                        "label": "Ads Running",
+                        "format": "boolean"
+                    },
+                    "creatives": {
+                        "label": "Ad Creatives",
+                        "format": "array"
+                    },
+                    "ad_texts": {
+                        "label": "Extracted Text",
+                        "format": "array"
+                    },
+                    "error": {
+                        "label": "Error",
+                        "format": "text"
+                    },
+                    "timestamp": {
+                        "label": "Checked At",
+                        "format": "date"
+                    }
+                }
+            }
+        }
+    }
+} 
