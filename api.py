@@ -68,6 +68,7 @@ def check_rate_limit(api_key: str) -> None:
     request_history[api_key].append(now)
 
 async def setup_browser() -> webdriver.Remote:
+    print("Setting up browser...")
     chrome_options = Options()
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--headless')
@@ -76,26 +77,46 @@ async def setup_browser() -> webdriver.Remote:
     # Set capabilities through options
     chrome_options.set_capability('browserName', 'chrome')
     chrome_options.set_capability('browserVersion', 'latest')
+    chrome_options.set_capability('timeouts', {
+        'implicit': 10000,
+        'pageLoad': 20000,
+        'script': 10000
+    })
     
     # Get browserless token from environment variable
     browserless_token = os.getenv('BROWSERLESS_TOKEN')
     if not browserless_token:
         raise ValueError("BROWSERLESS_TOKEN environment variable is required")
     
+    print("Connecting to browserless.io...")
     # Configure remote WebDriver to use browserless.io
-    remote_url = f'https://production-sfo.browserless.io/webdriver?token={browserless_token}'
+    remote_url = f'https://production-sfo.browserless.io/webdriver?token={browserless_token}&timeout=30000'
     
-    return webdriver.Remote(
-        command_executor=remote_url,
-        options=chrome_options
-    )
+    try:
+        driver = webdriver.Remote(
+            command_executor=remote_url,
+            options=chrome_options
+        )
+        print("Browser setup complete!")
+        return driver
+    except Exception as e:
+        print(f"Error setting up browser: {str(e)}")
+        raise
 
 async def process_domain(domain: str, driver: webdriver.Remote) -> List[Dict[str, Any]]:
     try:
+        print(f"Processing domain: {domain}")
         url = f"https://adstransparency.google.com/advertiser/{domain}?region=anywhere"
+        print(f"Navigating to URL: {url}")
+        
+        driver.set_page_load_timeout(30)  # 30 seconds timeout for page load
+        driver.implicitly_wait(10)  # 10 seconds implicit wait
+        
         driver.get(url)
+        print("Page loaded, waiting for 3 seconds...")
         await asyncio.sleep(3)  # Allow page to load
         
+        print("Returning test data for now")
         return [{
             "advertiser_id": domain,
             "creative_id": "test",
