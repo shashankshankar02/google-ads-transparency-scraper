@@ -9,6 +9,7 @@ from fastapi.security import APIKeyHeader
 from starlette.status import HTTP_429_TOO_MANY_REQUESTS
 import time
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
 app = FastAPI(
     title="Google Ads Transparency Scraper",
@@ -66,19 +67,18 @@ def check_rate_limit(api_key: str) -> None:
     
     request_history[api_key].append(now)
 
-async def setup_browser() -> webdriver.Chrome:
-    from selenium.webdriver.chrome.options import Options
+async def setup_browser() -> webdriver.Remote:
     chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-extensions")
-    chrome_options.add_argument("--remote-debugging-port=9222")
-    chrome_options.binary_location = os.getenv("CHROME_BIN", "/usr/bin/google-chrome")
-    return webdriver.Chrome(options=chrome_options)
+    chrome_options.add_argument("--headless")
+    
+    # Use remote Chrome instance
+    return webdriver.Remote(
+        command_executor=os.getenv("SELENIUM_REMOTE_URL", "https://chrome.browserless.io"),
+        options=chrome_options
+    )
 
-async def process_domain(domain: str, driver: webdriver.Chrome) -> List[Dict[str, Any]]:
+async def process_domain(domain: str, driver: webdriver.Remote) -> List[Dict[str, Any]]:
     # Placeholder for the actual scraping logic
     # This should be implemented based on your main.py logic
     return [{
@@ -114,7 +114,7 @@ async def scrape_domains(
             return results
         finally:
             if driver:
-                driver.quit()  # Selenium's quit() is synchronous
+                driver.quit()
                 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
