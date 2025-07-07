@@ -84,37 +84,62 @@ async def setup_browser():
 
 async def process_domain(domain: str, browser) -> List[Dict[str, Any]]:
     try:
-        print(f"Processing domain: {domain}")
+        print(f"[{time.strftime('%H:%M:%S')}] Processing domain: {domain}")
         url = f"https://adstransparency.google.com/advertiser/{domain}?region=anywhere"
-        print(f"Navigating to URL: {url}")
+        print(f"[{time.strftime('%H:%M:%S')}] Navigating to URL: {url}")
         
         page = await browser.newPage()
         await page.setViewport({'width': 1280, 'height': 800})
         
-        print("Loading page...")
-        await page.goto(url, {'waitUntil': 'networkidle0', 'timeout': 30000})
-        print("Page loaded")
+        print(f"[{time.strftime('%H:%M:%S')}] Loading page...")
+        await page.goto(url, {'waitUntil': 'networkidle0', 'timeout': 20000})
+        print(f"[{time.strftime('%H:%M:%S')}] Page loaded")
         
-        # Wait for a moment to ensure content is loaded
-        await asyncio.sleep(3)
+        # Wait for content to load
+        print(f"[{time.strftime('%H:%M:%S')}] Waiting for content...")
+        await asyncio.sleep(2)
         
-        print("Returning test data for now")
+        # Check for "No ads" message
+        no_ads_element = await page.querySelector('text/"No ads"')
+        if no_ads_element:
+            print(f"[{time.strftime('%H:%M:%S')}] No ads found for {domain}")
+            await page.close()
+            return []
+        
+        print(f"[{time.strftime('%H:%M:%S')}] Extracting ad data...")
+        
+        # Get advertiser info
+        advertiser_name = await page.evaluate('() => document.querySelector("h1")?.innerText || "Unknown"')
+        
+        # Get ad stats
+        stats = await page.evaluate('''() => {
+            const stats = {};
+            const dateElements = document.querySelectorAll('[aria-label*="Last shown"]');
+            stats.lastShown = dateElements.length ? dateElements[0].innerText : "Unknown";
+            return stats;
+        }''')
+        
+        print(f"[{time.strftime('%H:%M:%S')}] Data extracted successfully")
         await page.close()
         
         return [{
             "advertiser_id": domain,
-            "creative_id": "test",
+            "creative_id": f"{domain}-{int(time.time())}",
             "ads_running": True,
-            "first_shown": "2024-01-01",
-            "last_shown": "2024-01-31",
-            "regions": ["US"],
-            "languages": ["en"],
+            "first_shown": "2024-01-01",  # Placeholder
+            "last_shown": stats.get('lastShown', "Unknown"),
+            "regions": ["US"],  # Placeholder
+            "languages": ["en"],  # Placeholder
             "platform_types": ["web"],
             "ad_format_types": ["display"],
-            "advertiser_info": {"name": "Test Advertiser"}
+            "advertiser_info": {"name": advertiser_name}
         }]
     except Exception as e:
-        print(f"Error processing domain {domain}: {str(e)}")
+        print(f"[{time.strftime('%H:%M:%S')}] Error processing domain {domain}: {str(e)}")
+        try:
+            await page.close()
+        except:
+            pass
         return []
 
 @app.post("/scrape", response_model=List[Creative])
