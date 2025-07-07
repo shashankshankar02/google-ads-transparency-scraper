@@ -79,7 +79,7 @@ async def setup_browser() -> webdriver.Chrome:
     
     # Configure Selenium Wire to use remote Chrome
     seleniumwire_options = {
-        'addr': f'https://chrome.browserless.io?token={browserless_token}',
+        'addr': f'wss://chrome.browserless.io?token={browserless_token}',
         'verify_ssl': False  # Only if needed
     }
     
